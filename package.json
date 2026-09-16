@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
+    "dev": "pnpm -r --parallel dev",
     "lint": "oxlint"
   },
   "devDependencies": {
