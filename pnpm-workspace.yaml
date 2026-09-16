@@ -1,3 +1,11 @@
 packages:
   - client
   - server
+
+# pnpm blocks postinstall scripts by default and exits non-zero while any are
+# unapproved, which makes every `pnpm <script>` fail before it runs. These three
+# place native binaries (Prisma's query engine, esbuild's) and need to run.
+allowBuilds:
+  '@prisma/engines': true
+  esbuild: true
+  prisma: true
