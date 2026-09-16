@@ -1,0 +1,24 @@
+# Local development database only. Express and Vite run natively on the host so
+# hot reload stays fast, which is why nothing else is defined here.
+services:
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: phmappers
+      POSTGRES_PASSWORD: phmappers
+      POSTGRES_DB: phmappers
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    # Lets `docker compose up --wait` block until the database actually accepts
+    # connections, rather than returning as soon as the container starts.
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U phmappers -d phmappers']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
