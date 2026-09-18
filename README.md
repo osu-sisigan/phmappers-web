@@ -14,7 +14,7 @@ Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) and [N
 npm install -g pnpm
 ```
 
-Docker Desktop will ask to enable WSL2 during install — say yes. You don't need to work inside WSL; PowerShell is fine.
+Docker Desktop will ask to enable WSL2 during install - say yes. You don't need to work inside WSL; PowerShell is fine.
 
 ### Arch Linux
 
