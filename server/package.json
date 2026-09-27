@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node --watch src/index.ts",
+    "dev": "tsx --watch src/index.ts",
     "start": "node src/index.ts",
     "typecheck": "tsc -b",
     "generate": "prisma generate",
@@ -12,13 +12,17 @@
   },
   "dependencies": {
     "@prisma/client": "^7.10.0",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "osu-api-v2-js": "^3.0.5"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
-    "@types/node": "^24.13.4",
+    "@types/node": "^24.19.0",
     "prisma": "7.10.0",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.3"
   }
 }
