@@ -8,9 +8,13 @@
     "start": "node src/index.ts",
     "typecheck": "tsc -b",
     "generate": "prisma generate",
-    "migrate": "prisma migrate dev"
+    "migrate": "prisma migrate dev",
+    "seed": "prisma generate && tsx prisma/seed.ts",
+    "seed:collect": "prisma generate && tsx prisma/seed.ts --collect-only",
+    "seed:import": "prisma generate && tsx prisma/seed.ts --import"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.4.2",
