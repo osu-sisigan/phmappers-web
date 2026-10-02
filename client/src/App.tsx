@@ -7,6 +7,9 @@ function App() {
       <header>
         <nav>
           <NavLink to="/">Home</NavLink>
+          {/* Plain <a>, not <Link>: this must be a full page load so the
+              request reaches Express instead of the client-side router. */}
+          <a href="/auth/osu">Log in with osu!</a>
         </nav>
       </header>
       <main>
