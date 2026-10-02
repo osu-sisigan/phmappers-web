@@ -6,8 +6,9 @@ import cookieParser from 'cookie-parser';
 
 const app = express()
 
-// Every route lives under /api so the Vite dev server can proxy that prefix
-// straight through without colliding with client-side page routes.
+// JSON endpoints live under /api so the Vite dev server can proxy that prefix
+// without colliding with client-side page routes. Auth stays at /auth because
+// its cookie path and the osu! redirect URI are tied to that URL.
 const api = express.Router()
 
 api.get('/health', (_req, res) => {
