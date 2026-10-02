@@ -45,6 +45,10 @@ That's it. `pnpm dev` runs the frontend and backend together:
 | API | http://localhost:4000 |
 | Postgres | `localhost:5432`, user / password / db all `phmappers` |
 
+`server/.env.example` ships with placeholder osu! credentials so the server starts out of the box. Logging in with osu! needs real values for `OSU_CLIENT_ID`, `OSU_CLIENT_SECRET` and `OSU_REDIRECT_URI` in `server/.env`.
+
+The client proxies `/api/*` and `/auth/*` to the server, so don't define client routes under those prefixes.
+
 ## Commands
 
 | | |
