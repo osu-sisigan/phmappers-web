@@ -11,3 +11,260 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// enums
+
+enum BeatmapStatus {
+  GRAVEYARD
+  WIP
+  PENDING
+  QUALIFIED
+  RANKED
+  APPROVED
+  LOVED
+}
+
+enum Ruleset {
+  OSU
+  MANIA
+  TAIKO
+  FRUITS
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id                              Int                    @id
+  username                        String
+  avatar_url                      String?
+  country_code                    String                 @db.Char(2)
+  has_authenticated               Boolean                @default(false)
+  role                            UserRole               @default(USER)
+  last_login_at                   DateTime?
+  is_mapper                       Boolean                @default(false)
+  ranked_count                    Int                    @default(0)
+  loved_count                     Int                    @default(0)
+  guest_count                     Int                    @default(0)
+  tournament_count                Int                    @default(0)
+  contest_count                   Int                    @default(0)
+  leaderboard_score               Decimal                @default(0) @db.Decimal(12, 4)
+  leaderboard_updated_at          DateTime?
+  last_synced_at                  DateTime?
+  created_at                      DateTime               @default(now())
+  updated_at                      DateTime               @updatedAt
+  sessions                        Session[]
+  hosted_beatmapsets              Beatmapset[]           @relation("BeatmapsetHost")
+  created_beatmaps                Beatmap[]              @relation("BeatmapCreator")
+  owned_beatmaps                  BeatmapOwner[]         @relation("BeatmapOwnerUser")
+  tournament_submissions          TournamentSubmission[] @relation("TournamentSubmissionSubmitter")
+  reviewed_tournament_submissions TournamentSubmission[] @relation("TournamentSubmissionReviewer")
+  contest_submissions             ContestSubmission[]    @relation("ContestSubmissionSubmitter")
+  reviewed_contest_submissions    ContestSubmission[]    @relation("ContestSubmissionReviewer")
+
+  @@index([country_code])
+  @@index([is_mapper])
+  @@index([is_mapper, country_code, leaderboard_score])
+  @@index([ranked_count])
+  @@index([loved_count])
+  @@index([guest_count])
+  @@index([tournament_count])
+  @@index([contest_count])
+  @@index([last_synced_at])
+}
+
+model Session {
+  id           Int      @id @default(autoincrement())
+  user_id      Int
+  token_hash   String   @unique
+  last_used_at DateTime @default(now())
+  created_at   DateTime @default(now())
+  expires_at   DateTime
+  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([expires_at])
+}
+
+model Beatmapset {
+  id                   Int           @id
+  artist               String
+  title                String
+  host_id              Int
+  cover_url            String?
+  ranked_date          DateTime?
+  status               BeatmapStatus
+  spotlight            Boolean       @default(false)
+  last_synced_at       DateTime?
+  next_status_check_at DateTime?
+  created_at           DateTime      @default(now())
+  updated_at           DateTime      @updatedAt
+  host                 User          @relation("BeatmapsetHost", fields: [host_id], references: [id], onDelete: Restrict)
+  beatmaps             Beatmap[]
+
+  @@index([host_id])
+  @@index([status])
+  @@index([ranked_date])
+  @@index([status, ranked_date])
+  @@index([status, next_status_check_at])
+  @@index([artist])
+  @@index([title])
+}
+
+model Beatmap {
+  id                     Int                    @id
+  beatmapset_id          Int
+  creator_user_id        Int
+  version                String
+  star_rating            Float
+  drain_length           Int
+  total_length           Int
+  mode                   Ruleset
+  status                 BeatmapStatus
+  last_synced_at         DateTime?
+  created_at             DateTime               @default(now())
+  updated_at             DateTime               @updatedAt
+  beatmapset             Beatmapset             @relation(fields: [beatmapset_id], references: [id], onDelete: Cascade)
+  creator                User                   @relation("BeatmapCreator", fields: [creator_user_id], references: [id], onDelete: Restrict)
+  owners                 BeatmapOwner[]
+  tournament_maps        TournamentMap[]
+  contest_entries        ContestEntry[]
+  tournament_submissions TournamentSubmission[]
+  contest_submissions    ContestSubmission[]
+
+  @@index([beatmapset_id])
+  @@index([creator_user_id])
+  @@index([status])
+  @@index([mode])
+  @@index([star_rating])
+}
+
+model BeatmapOwner {
+  beatmap_id Int
+  user_id    Int
+
+  beatmap Beatmap @relation(fields: [beatmap_id], references: [id], onDelete: Cascade)
+  user    User    @relation("BeatmapOwnerUser", fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@id([beatmap_id, user_id])
+  @@index([user_id])
+}
+
+model Tournament {
+  id         String          @id @default(cuid())
+  name       String
+  url        String          @db.Text //maybe a forum post/wiki/website
+  pool_url   String?         @db.Text
+  created_at DateTime        @default(now())
+  updated_at DateTime        @updatedAt
+  maps       TournamentMap[]
+
+  @@unique([name, url])
+}
+
+model TournamentMap {
+  id                String                @id @default(cuid())
+  tournament_id     String
+  beatmap_id        Int
+  slot              String?
+  pool_url          String?               @db.Text
+  created_at        DateTime              @default(now())
+  updated_at        DateTime              @updatedAt
+  tournament        Tournament            @relation(fields: [tournament_id], references: [id], onDelete: Cascade)
+  beatmap           Beatmap               @relation(fields: [beatmap_id], references: [id], onDelete: Restrict)
+  source_submission TournamentSubmission? @relation("ApprovedTournamentSubmission")
+
+  @@unique([tournament_id, beatmap_id, slot])
+  @@index([tournament_id])
+  @@index([beatmap_id])
+}
+
+model TournamentSubmission {
+  id                         String           @id @default(cuid())
+  submitted_by_id            Int
+  beatmap_id                 Int
+  tournament_name            String
+  tournament_url             String           @db.Text
+  slot                       String?
+  pool_url                   String?          @db.Text
+  reason                     String?          @db.Text
+  status                     SubmissionStatus @default(PENDING)
+  submitted_at               DateTime         @default(now())
+  reviewed_at                DateTime?
+  reviewed_by_id             Int?
+  review_reason              String?          @db.Text
+  approved_tournament_map_id String?          @unique
+  submitter                  User             @relation("TournamentSubmissionSubmitter", fields: [submitted_by_id], references: [id], onDelete: Cascade)
+  reviewer                   User?            @relation("TournamentSubmissionReviewer", fields: [reviewed_by_id], references: [id], onDelete: SetNull)
+  beatmap                    Beatmap          @relation(fields: [beatmap_id], references: [id], onDelete: Restrict)
+  approved_tournament_map    TournamentMap?   @relation("ApprovedTournamentSubmission", fields: [approved_tournament_map_id], references: [id], onDelete: SetNull)
+
+  @@index([submitted_by_id])
+  @@index([beatmap_id])
+  @@index([status, submitted_at])
+  @@index([reviewed_by_id])
+}
+
+model Contest {
+  id          String         @id @default(cuid())
+  name        String
+  url         String         @db.Text //mpg link or forum thread for contest
+  results_url String?        @db.Text
+  created_at  DateTime       @default(now())
+  updated_at  DateTime       @updatedAt
+  entries     ContestEntry[]
+
+  @@unique([name, url])
+}
+
+model ContestEntry {
+  id                String             @id @default(cuid())
+  contest_id        String
+  beatmap_id        Int
+  placement         Int?
+  created_at        DateTime           @default(now())
+  updated_at        DateTime           @updatedAt
+  contest           Contest            @relation(fields: [contest_id], references: [id], onDelete: Cascade)
+  beatmap           Beatmap            @relation(fields: [beatmap_id], references: [id], onDelete: Restrict)
+  source_submission ContestSubmission? @relation("ApprovedContestSubmission")
+
+  @@unique([contest_id, beatmap_id])
+  @@index([contest_id])
+  @@index([beatmap_id])
+  @@index([placement])
+}
+
+model ContestSubmission {
+  id                        String           @id @default(cuid())
+  submitted_by_id           Int
+  beatmap_id                Int
+  contest_name              String
+  contest_url               String           @db.Text
+  placement                 Int?
+  results_url               String?          @db.Text
+  reason                    String?          @db.Text
+  status                    SubmissionStatus @default(PENDING)
+  submitted_at              DateTime         @default(now())
+  reviewed_at               DateTime?
+  reviewed_by_id            Int?
+  review_reason             String?          @db.Text
+  approved_contest_entry_id String?          @unique
+
+  submitter              User          @relation("ContestSubmissionSubmitter", fields: [submitted_by_id], references: [id], onDelete: Cascade)
+  reviewer               User?         @relation("ContestSubmissionReviewer", fields: [reviewed_by_id], references: [id], onDelete: SetNull)
+  beatmap                Beatmap       @relation(fields: [beatmap_id], references: [id], onDelete: Restrict)
+  approved_contest_entry ContestEntry? @relation("ApprovedContestSubmission", fields: [approved_contest_entry_id], references: [id], onDelete: SetNull)
+
+  @@index([submitted_by_id])
+  @@index([beatmap_id])
+  @@index([status, submitted_at])
+  @@index([reviewed_by_id])
+}

@@ -58,8 +58,8 @@ That's it. `pnpm dev` runs the frontend and backend together:
 
 ## A note on the database
 
-The schema has no tables yet so ping @acnopy or bernpayot.
+There is a database, do not be fooled to think that there isnt.
 
 ## If something breaks
 
-Ping @acnopy or bernpayot.
+The project is fine, it will never, ever, break.
